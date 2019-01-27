@@ -1,0 +1,24 @@
+﻿  HelloWorld.cpp
+c:\users\luis david\source\repos\helloworld\datarefs.h(146): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(68): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(69): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(70): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(71): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(72): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(73): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(144): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(384): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(719): warning C4244: '=': conversión de 'double' a 'float'; posible pérdida de datos
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(744): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(796): warning C4305: '+=': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(810): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(811): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(827): warning C4305: '-=': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(841): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(842): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(887): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(888): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(966): warning C4305: 'inicializando': truncamiento de 'double' a 'float'
+c:\users\luis david\source\repos\helloworld\helloworld.cpp(967): warning C4305: 'inicializando': truncamiento de 'double' a 'float'
+     Creando biblioteca .\Release\64\HelloWorld.lib y objeto .\Release\64\HelloWorld.exp
+  HelloWorld.vcxproj -> C:\Users\Luis David\source\repos\HelloWorld\.\Release\plugins\HelloWorld\64\win.xpl
