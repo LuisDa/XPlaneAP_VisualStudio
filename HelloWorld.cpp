@@ -517,7 +517,8 @@ void AP_ControlHeading()
 
 	if (autopilot_prendido && override_fdRoll)
 	{
-		float ap_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"));
+		//float ap_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"));
+		float ap_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading_mag"));
 		float current_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit2/gauges/indicators/heading_AHARS_deg_mag_pilot"));
 		float nav_course = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/radios/nav1_obs_degt")); //Para navegación VOR, curso o radial a interceptar
 		float ils_course = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/radios/nav1_course_degm")); //Para un ILS, curso de la pista donde aterrizar
