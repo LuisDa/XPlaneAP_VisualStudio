@@ -14,6 +14,10 @@ XPLMDataRef gDataRef_EtapaVOR = NULL;
 
 XPLMDataRef gDataRef_EstadoLOC = NULL; //Estado del localizador: 0->inactivo, 1->armado, 2->activo
 
+XPLMDataRef gDataRef_VORLOC_armado = NULL; //VOR LOC Armado (1) o no (0)
+XPLMDataRef gDataRef_ILSLOC_armado = NULL; //ILS LOC Armado (1) o no (0)
+XPLMDataRef gDataRef_ILSGS_armado = NULL; //ILS G/S Armado (1) o no (0)
+
 //Variables asociadas a DataRefs
 static int g_apPrendido = 0;
 static int g_apLateralMode = 0;
@@ -24,6 +28,9 @@ static float g_dPIDAlt = 0;
 static float g_apVS = 0; //El DataRef de XPlane de V/S del piloto automático sólo se puede escribir con algunos aviones, con otros siempre se sobreescribe a cero.
 static int g_etapaVOR = 0;
 static int g_estadoLOC = 0;
+static int g_vorLoc_armado = 0;
+static int g_ilsLoc_armado = 0;
+static int g_ilsGS_armado = 0;
 
 float RegAPPrendidoDataRefInDRE(float elapsedMe, float elapsedSim, int counter, void * refcon);  //  Declare callback to register dataref
 int GetAPPrendidoDataRefCB(void* inRefcon);
@@ -63,7 +70,20 @@ float RegEstadoLOC(float elapsedMe, float elapsedSim, int counter, void * refcon
 int GetEstadoLOC(void* inRefcon);
 void SetEstadoLOC(void* inRefcon, int inValue);
 
+//VOR LOC armado
+float RegVORLOC_Armado(float elapsedMe, float elapsedSim, int counter, void * refcon);
+int GetVORLOC_Armado(void* inRefcon);
+void SetVORLOC_Armado(void* inRefcon, int inValue);
 
+//ILS LOC armado
+float RegILSLOC_Armado(float elapsedMe, float elapsedSim, int counter, void * refcon);
+int GetILSLOC_Armado(void* inRefcon);
+void SetILSLOC_Armado(void* inRefcon, int inValue);
+
+//ILS G/S armado
+float RegILSGS_Armado(float elapsedMe, float elapsedSim, int counter, void * refcon);
+int GetILSGS_Armado(void* inRefcon);
+void SetILSGS_Armado(void* inRefcon, int inValue);
 
 void setupDataRefs()
 {
@@ -205,6 +225,50 @@ void setupDataRefs()
 	gDataRef_EstadoLOC = XPLMFindDataRef("CUSTOM/AP/Lateral/EstadoLOC");
 	XPLMRegisterFlightLoopCallback(RegEstadoLOC, 1, NULL);   // This FLCB will register our custom dataref in DRE
 
+	//VOR LOC Armado
+	gDataRef_VORLOC_armado = XPLMRegisterDataAccessor("CUSTOM/AP/Lateral/VOR_LOC_Armado",
+		xplmType_Int,                                  // The types we support
+		1,                                             // Writable
+		GetVORLOC_Armado, SetVORLOC_Armado,      // Integer accessors
+		NULL, NULL,            // Float accessors
+		NULL, NULL,                                    // Doubles accessors
+		NULL, NULL,                                    // Int array accessors
+		NULL, NULL,                                    // Float array accessors
+		NULL, NULL,                                    // Raw data accessors
+		NULL, NULL);                                   // Refcons not used
+
+	gDataRef_VORLOC_armado = XPLMFindDataRef("CUSTOM/AP/Lateral/VOR_LOC_Armado");
+	XPLMRegisterFlightLoopCallback(RegVORLOC_Armado, 1, NULL);   // This FLCB will register our custom dataref in DRE
+
+	//ILS LOC Armado
+	gDataRef_ILSLOC_armado = XPLMRegisterDataAccessor("CUSTOM/AP/Lateral/ILS_LOC_Armado",
+		xplmType_Int,                                  // The types we support
+		1,                                             // Writable
+		GetILSLOC_Armado, SetILSLOC_Armado,      // Integer accessors
+		NULL, NULL,            // Float accessors
+		NULL, NULL,                                    // Doubles accessors
+		NULL, NULL,                                    // Int array accessors
+		NULL, NULL,                                    // Float array accessors
+		NULL, NULL,                                    // Raw data accessors
+		NULL, NULL);                                   // Refcons not used
+
+	gDataRef_ILSLOC_armado = XPLMFindDataRef("CUSTOM/AP/Lateral/ILS_LOC_Armado");
+	XPLMRegisterFlightLoopCallback(RegILSLOC_Armado, 1, NULL);   // This FLCB will register our custom dataref in DRE
+
+	//ILS G/S Armado
+	gDataRef_ILSGS_armado = XPLMRegisterDataAccessor("CUSTOM/AP/Vertical/ILS_GS_Armado",
+		xplmType_Int,                                  // The types we support
+		1,                                             // Writable
+		GetILSGS_Armado, SetILSGS_Armado,      // Integer accessors
+		NULL, NULL,            // Float accessors
+		NULL, NULL,                                    // Doubles accessors
+		NULL, NULL,                                    // Int array accessors
+		NULL, NULL,                                    // Float array accessors
+		NULL, NULL,                                    // Raw data accessors
+		NULL, NULL);                                   // Refcons not used
+
+	gDataRef_ILSGS_armado = XPLMFindDataRef("CUSTOM/AP/Vertical/ILS_GS_Armado");
+	XPLMRegisterFlightLoopCallback(RegILSGS_Armado, 1, NULL);   // This FLCB will register our custom dataref in DRE
 }
 
 
@@ -427,3 +491,73 @@ void SetEstadoLOC(void* inRefcon, int inValue)
 	g_estadoLOC = inValue;
 }
 // / ESTADO LOCALIZADOR
+
+//VOR LOC ARMADO
+float RegVORLOC_Armado(float elapsedMe, float elapsedSim, int counter, void * refcon)
+{
+	XPLMPluginID PluginID = XPLMFindPluginBySignature("xplanesdk.examples.DataRefEditor");
+	if (PluginID != XPLM_NO_PLUGIN_ID)
+	{
+		XPLMSendMessageToPlugin(PluginID, MSG_ADD_DATAREF, (void*)"CUSTOM/AP/Lateral/VOR_LOC_Armado");
+	}
+
+	return 0;  // Flight loop is called only once!
+}
+
+
+int GetVORLOC_Armado(void* inRefcon)
+{
+	return g_vorLoc_armado;
+}
+
+void SetVORLOC_Armado(void* inRefcon, int inValue)
+{
+	g_vorLoc_armado = inValue;
+}
+// / VOR LOC ARMADO
+
+// ILS LOC ARMADO
+float RegILSLOC_Armado(float elapsedMe, float elapsedSim, int counter, void * refcon)
+{
+	XPLMPluginID PluginID = XPLMFindPluginBySignature("xplanesdk.examples.DataRefEditor");
+	if (PluginID != XPLM_NO_PLUGIN_ID)
+	{
+		XPLMSendMessageToPlugin(PluginID, MSG_ADD_DATAREF, (void*)"CUSTOM/AP/Lateral/ILS_LOC_Armado");
+	}
+
+	return 0;  // Flight loop is called only once!
+}
+
+int GetILSLOC_Armado(void* inRefcon)
+{
+	return g_ilsLoc_armado;
+}
+
+void SetILSLOC_Armado(void* inRefcon, int inValue)
+{
+	g_ilsLoc_armado = inValue;
+}
+// / ILS LOC ARMADO
+
+// ILS G/S ARMADO
+float RegILSGS_Armado(float elapsedMe, float elapsedSim, int counter, void * refcon)
+{
+	XPLMPluginID PluginID = XPLMFindPluginBySignature("xplanesdk.examples.DataRefEditor");
+	if (PluginID != XPLM_NO_PLUGIN_ID)
+	{
+		XPLMSendMessageToPlugin(PluginID, MSG_ADD_DATAREF, (void*)"CUSTOM/AP/Vertical/ILS_GS_Armado");
+	}
+
+	return 0;  // Flight loop is called only once!
+}
+
+int GetILSGS_Armado(void* inRefcon)
+{
+	return g_ilsGS_armado;
+}
+
+void SetILSGS_Armado(void* inRefcon, int inValue)
+{
+	g_ilsGS_armado = inValue;
+}
+// / ILS G/S ARMADO
