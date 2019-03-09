@@ -313,7 +313,7 @@ void MyDrawWindowCallback(
 
 		if (ils_gs_armado && ap_modo_lateral == 3)
 		{
-			if ((fabs(nav_vdef_dot) < 1.5) && (ap_modo_vertical != 3))
+			if ((fabs(nav_vdef_dot) < 1.5) && (ap_modo_vertical < 3)) //Modos 3, 13 o 14 para senda de planeo
 			{
 				XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 3);
 				ap_modo_vertical = 3;
