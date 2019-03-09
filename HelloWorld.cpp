@@ -274,11 +274,52 @@ void MyDrawWindowCallback(
 		XPLMSetDatai(XPLMFindDataRef("sim/operation/override/override_flightdir_ptch"), 0);
 		XPLMSetDatai(XPLMFindDataRef("sim/cockpit/autopilot/autopilot_mode"), 1);
 	}
-	
+
+
 	//XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 6);
 	int ap_modo_vertical = XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo")); //1=modo pitch-speed, 2=modo pitch-VS
 	int ap_modo_lateral = XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/Lateral/Modo"));
 
+	//Detectar modos LOC (VOR e ILS) y G/S (sólo ILS)
+	bool nav1_sintonizada = (XPLMGetDatai(XPLMFindDataRef("sim/cockpit/radios/nav1_fromto")) != 0); //Hemos visto que si la radioayuda se recibe, este DataRef es distinto de cero (bueno, no comprobado con ILS, sólo con VOR).
+
+	//Si sintonizamos una radioayuda, daremos prioridad al ILS frente al VOR: comprobaremos primero si está el ILS LOC armado, y de lo contrario, miraremos el VOR LOC armado.
+	//El piloto deberá estar atento, o bien el FMS que se implemente sobre este piloto automático, tenerlo en cuenta. Por ejemplo, si el piloto desea usar un VOR para aproximarse a un aeropuerto y finalmente hacer la aproximación final con ILS,
+	//deberá sintonizar primero el VOR y dejar la frecuencia ILS en stand-by, y cuando ya se acerque, conmutar dichas frecuencias y continuar con ILS hasta tomar tierra.
+	bool ils_loc_armado = (XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/Lateral/ILS_LOC_Armado")) == 1);
+	bool ils_gs_armado = (XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/ILS_GS_Armado")) == 1);
+	bool vor_loc_armado = (XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/Lateral/VOR_LOC_Armado")) == 1);
+	float nav_hdef_dot = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/radios/nav1_hdef_dot"));
+	float nav_vdef_dot = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/radios/nav1_vdef_dot"));
+
+	if (nav1_sintonizada)
+	{
+		if (ils_loc_armado)
+		{
+			if ((fabs(nav_hdef_dot) < 2) && (ap_modo_lateral != 3))
+			{
+				XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Lateral/Modo"), 3);
+				ap_modo_lateral = 3;
+			}
+		} 
+		else if (vor_loc_armado)
+		{
+			if ((fabs(nav_hdef_dot) < 2) && (ap_modo_lateral != 2))
+			{
+				XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Lateral/Modo"), 2);
+				ap_modo_lateral = 2;
+			}
+		}
+
+		if (ils_gs_armado && ap_modo_lateral == 3)
+		{
+			if ((fabs(nav_vdef_dot) < 1.5) && (ap_modo_vertical != 3))
+			{
+				XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 3);
+				ap_modo_vertical = 3;
+			}
+		}
+	}
 
 	if (ap_modo_lateral <= 8) AP_ControlHeading();
 	else if (ap_modo_lateral == 9) AP_ControlRadialVOR(); //Volar un VOR con esta función específica
