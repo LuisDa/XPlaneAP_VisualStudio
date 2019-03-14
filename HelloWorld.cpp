@@ -350,84 +350,50 @@ void MyDrawWindowCallback(
 	//if (serialUtil != NULL)
 	//{
 	try {
-		//serialUtil = new SerialUtil();//("\\\\.\\COM3");
-
-		//if (serialUtil != NULL)
 		if (serial != NULL)
 		{
-			//while (SerialUtil::SP->IsConnected())
-			//if (SerialUtil::SP->IsConnected())
+
 			if (serial->IsConnected())
-			{
-				
-				//string data_read;
-				//data_read = serialUtil->read();
+			{				
 				char data_read_chr[4] = {0, 0, 0, 0};
-
 				int num_bytes = serial->ReadData(data_read_chr, 4);
-
-				//if (!data_read.empty())
+				
 				if (num_bytes == 4)
-				{
-					//const char* data_read_chr = data_read.c_str();
-
-					//float ap_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"));
+				{					
 					float current_thr_vect_ratio = XPLMGetDataf(XPLMFindDataRef("sim/cockpit2/controls/thrust_vector_ratio"));
 
-					//if (data_read_chr[2] == 0xAB)
-					//{
-						//if (data_read.at(0) == 'a')
-						if (data_read_chr[0] == 'a')
-						{
-							//ap_heading = ap_heading + 10;
-							//if (ap_heading > 359.5) ap_heading = 0;
-							//else if (ap_heading < 0) ap_heading = 359;
-							////XPLMSetDataf(XPLMFindDataRef("sim/cockpit2/controls/thrust_vector_ratio"), current_thr_vect_ratio - 0.1);
-							//XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), ap_heading);
+					if (data_read_chr[0] == 'a')
+					{
+						float ap_VS = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"));
+						ap_VS -= 100;
+						XPLMSetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"), ap_VS);
+					}
+					else if (data_read_chr[0] == 'b')
+					{
+						float ap_VS = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"));
+						ap_VS += 100;
+						XPLMSetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"), ap_VS);
+					}
 
-							float ap_VS = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"));
-							ap_VS -= 100;
-							XPLMSetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"), ap_VS);
-						}
-						else if (data_read_chr[0] == 'b')
-						{
-							//ap_heading = ap_heading - 10;
-							//if (ap_heading > 359.5) ap_heading = 0;
-							//else if (ap_heading < 0) ap_heading = 359;
-							//XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), ap_heading);
-							////XPLMSetDataf(XPLMFindDataRef("sim/cockpit2/controls/thrust_vector_ratio"), current_thr_vect_ratio + 0.1);
+					unsigned int pote_vectorial = (unsigned int)data_read_chr[1];
 
-							float ap_VS = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"));
-							ap_VS += 100;
-							XPLMSetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"), ap_VS);
-						}
+					//Ñapa para que siempre nos dé un valor positivo (pero como solución es un zurullo de vaca)
+					//Cuando el byte pasa de 127, por razones que ahora desconocemos, pasa a ponerse un valor negativo. Hacemos una conversión para que haya continuidad, y antes parece pasar por el valor cero
+					//Definimos, por tanto, una función a tramos: 
+					// - Si nos da menor o igual a 1127, lo dejamos como está
+					// - Si nos da igual a 1000, lo ponemos a 1128
+					// - Y si nos da INFERIOR a 1000, es que el valor original es negativo, y haremos que dé entre 1128 y 1255
+					if (pote_vectorial > 127) pote_vectorial += 254;
 
-						unsigned int pote_vectorial = (unsigned int)data_read_chr[1];
 
-						//Ñapa para que siempre nos dé un valor positivo (pero como solución es un zurullo de vaca)
-						//Cuando el byte pasa de 127, por razones que ahora desconocemos, pasa a ponerse un valor negativo. Hacemos una conversión para que haya continuidad, y antes parece pasar por el valor cero
-						//Definimos, por tanto, una función a tramos: 
-						// - Si nos da menor o igual a 1127, lo dejamos como está
-						// - Si nos da igual a 1000, lo ponemos a 1128
-						// - Y si nos da INFERIOR a 1000, es que el valor original es negativo, y haremos que dé entre 1128 y 1255
-						if (pote_vectorial > 127) pote_vectorial += 254;
+					XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Lateral/EstadoLOC"), pote_vectorial);
 
-						//pote_vectorial += 1000;
-						/*
-						if (pote_vectorial < 0)
-						{
-							pote_vectorial += 255;
-						}
-						*/
+					float palanca_vectorial = (1.0*pote_vectorial) / 255;
 
-						XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Lateral/EstadoLOC"), pote_vectorial);
-
-						float palanca_vectorial = (1.0*pote_vectorial) / 255;
-
-						//float palanca_vectorial = ((float)data_read_chr[1]) / 255.0;
-						XPLMSetDataf(XPLMFindDataRef("sim/cockpit2/controls/thrust_vector_ratio"), palanca_vectorial);
+					//float palanca_vectorial = ((float)data_read_chr[1]) / 255.0;
+					XPLMSetDataf(XPLMFindDataRef("sim/cockpit2/controls/thrust_vector_ratio"), palanca_vectorial);
 						
-					//}
+					
 				}		
 
 				PurgeComm(serial->getHandle(), PURGE_RXCLEAR);
@@ -441,18 +407,6 @@ void MyDrawWindowCallback(
 	{
 
 	}
-
-
-	//}
-	
-
-	/*
-	float ap_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"));
-	ap_heading = ap_heading + clicks;
-	if (ap_heading > 359.5) ap_heading = 0;
-	else if (ap_heading < 0) ap_heading = 359;
-	XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), ap_heading);
-	*/
 }                                   
 
 /*
@@ -533,12 +487,6 @@ int MyHandleMouseWheelCallback(
 	int                  clicks,
 	void *               inRefcon)
 {
-	/*
-	float ap_airspeed = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/airspeed"));
-	ap_airspeed = ap_airspeed + clicks;
-	if (ap_airspeed < 0) ap_airspeed = 0;
-	XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/airspeed"), ap_airspeed);
-	*/
 	float ap_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"));
 	ap_heading = ap_heading + clicks;
 	if (ap_heading > 359.5) ap_heading = 0;
@@ -557,26 +505,22 @@ void AP_ControlHeading()
 	bool autopilot_prendido = (XPLMGetDatai(XPLMFindDataRef("sim/cockpit/autopilot/autopilot_mode")) == 2);
 
 	if (autopilot_prendido && override_fdRoll)
-	{
-		//float ap_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"));
+	{		
 		float ap_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading_mag"));
 		float current_heading = XPLMGetDataf(XPLMFindDataRef("sim/cockpit2/gauges/indicators/heading_AHARS_deg_mag_pilot"));
 		float nav_course = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/radios/nav1_obs_degt")); //Para navegación VOR, curso o radial a interceptar
 		float ils_course = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/radios/nav1_course_degm")); //Para un ILS, curso de la pista donde aterrizar
 		float nav_hdef_dot = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/radios/nav1_hdef_dot")); //Para navegación VOR o ILS, indicador de desviación con respecto al radial a interceptar
 		int modo_lateral = XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/Lateral/Modo"));
-
-		//Probamos el caso "normal" (sin pasar por heading=360 grados)
+				
 		float roll = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/flight_director_roll"));
-		//float hdg_diff = ap_heading - current_heading;
-
 		float hdg_diff = getHeadingIncrement(ap_heading, current_heading);
 		float crs_inc = getHeadingIncrement(nav_course, current_heading);
 
 
-		if (modo_lateral == 2) //VOR //XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt"));
+		if (modo_lateral == 2) //VOR 
 		{
-			XPLMSetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt"), crs_inc);
+			//XPLMSetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt"), crs_inc);
 
 			if (fabs(crs_inc) < 60)
 			{
@@ -608,20 +552,6 @@ void AP_ControlHeading()
 					XPLMSetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/dPIDAlt"), 4);
 				}
 			}
-			/*
-			if (((fabs(crs_inc) < 30)) && (fabs(nav_hdef_dot) < 0.6))
-			{
-				current_heading = getTargetHeading(nav_course, 50 * nav_hdef_dot);
-				XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), current_heading);
-			}
-			else if (fabs(crs_inc) < 60) //De momento contemplamos únicamente el caso de estar dentro de un abanico de 60º en torno al radial
-			{
-				if (nav_hdef_dot > 0) current_heading = getTargetHeading(nav_course, 30);
-				else current_heading = getTargetHeading(nav_course, -30);
-
-				XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), current_heading);
-			}
-			*/
 		}
 		else if (modo_lateral == 3) //ILS
 		{
@@ -629,26 +559,6 @@ void AP_ControlHeading()
 			XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), current_heading);
 		}
 
-/*
-		if ( ((modo_lateral == 2) && ((fabs(crs_inc) < 60) && (fabs(nav_hdef_dot) < 2))) //Navegación lateral con VOR
-			|| ((modo_lateral == 3) && (fabs(nav_hdef_dot) < 2))) //Navegación lateral con ILS
-		{
-			//Controlaremos el vuelo del VOR variando el rumbo //getTargetHeading(inicial, incr)
-			if (modo_lateral == 2) //VOR
-			{
-				current_heading = getTargetHeading(nav_course, 30 * nav_hdef_dot);
-				XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), current_heading);
-			}
-			else if (modo_lateral == 3) //ILS
-			{
-				current_heading = getTargetHeading(ils_course, 30 * nav_hdef_dot);
-				XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), current_heading);
-			}
-		}
-*/		
-
-		//if (getHeadingIncrement(ap_heading, current_heading) < -30) roll = -30;
-		//else if (getHeadingIncrement(ap_heading, current_heading) > 30) roll = 30;
 		if (getHeadingIncrement(ap_heading, current_heading) < -15) roll = -30;
 		else if (getHeadingIncrement(ap_heading, current_heading) > 15) roll = 30;
 		else
@@ -665,9 +575,7 @@ void AP_ControlHeading()
 		}
 
 		XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/flight_director_roll"), roll);
-	}
-	
-	//time0 = time;
+	}	
 }
 
 void AP_ControlRadialVOR(void)
@@ -683,22 +591,6 @@ void AP_ControlRadialVOR(void)
 		float nav_dme = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/radios/nav1_dme_dist_m"));
 		float crs_inc = getHeadingIncrement(nav_course, current_heading);
 		float roll = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/flight_director_roll"));
-
-		//Habrá distintos modos de interceptar. Según nos aproximemos al radial y con qué ángulo, habrá que ver la variación de la aguja y con eso controlar el alabeo
-		//Se podrá sacar un "needle trend" y en función del mismo, poner un alabeo mayor o menor (máximo alabeo, 30º, con eso también podríamos ver la distancia de anticipación).
-		//Cuando estemos ya próximos a interceptar, activamos el PID que controla el alabeo en función de la aguja. Se podrá también tener en cuenta la diferencia entre el radial y el rumbo actual => posiblemente se necesite una máquina de estados GRAFCET.
-
-		//Definimos etapa del GRAFCET:
-		// 0 -> No hay VOR cercano
-		// 1 -> La distancia al VOR es inferior a 10 NM y la needle está muy lejos
-		// 2 -> La distancia al VOR es inferior a 2 NM y la needle sigue muy lejos. Comenzamos a virar
-		// 3 -> Virando, la needle ya está cerca, el PID coge el control
-		// Si salimos del modo lateral LOC VOR, pasamos nuevamente a 0
-		/*
-		if ((g_VORInctpSts == 0) && (nav_dme <= 10) && (fabs(nav_hdef_dot) > 1.5)) g_VORInctpSts = 1; // Nos acercamos al VOR y la needle queda muy lejos
-		else if ((g_VORInctpSts == 1) && (nav_dme <= 2) && (fabs(nav_hdef_dot) > 1.5)) g_VORInctpSts = 2; //Estamos a menos de 2 NM del VOR y la needle sigue quedando lejos => Toca hacer el viraje
-		else if ((g_VORInctpSts == 2) && (fabs(nav_hdef_dot) < 1)) g_VORInctpSts = 3; //Needle ya cerca e interceptada, damos el control al PID
-		*/
 
 		//Algoritmo alternativo: esperar a interceptar y ahí ya que entre en juego el PID o el alabeo controlado. Probamos con delta (diferencia entre rumbo y curso) no muy grandes
 		if ((g_VORInctpSts == 0) && (fabs(nav_hdef_dot) < 2.2)) g_VORInctpSts = 1; //Comenzamos a acercarnos al cero de la aguja -> Tocará alabear 30º a izquierda o derecha según corresponda
@@ -726,22 +618,8 @@ void AP_ControlRadialVOR(void)
 
 			if (roll > 20 * nav_hdef_dot) roll = 20 * nav_hdef_dot;
 			else if (roll < -20 * nav_hdef_dot) roll = -20 * nav_hdef_dot;
-
-			//if (roll > 10) roll = 10;
-			//else if (roll < -10) roll = -10;
 		}
 
-		/*
-		if (g_VORInctpSts == 1)
-		{
-			gCtrlVOR_LOC.setPropGain(kPID_Vor);
-			gCtrlVOR_LOC.setDerGain(dPID_Vor);
-			roll = gCtrlVOR_LOC.getOutput(nav_hdef_dot, time - time0);
-
-			if (roll > 30) roll = 30;
-			else if (roll < -30) roll = -30;
-		}
-		*/
 
 
 		XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/flight_director_roll"), roll);
@@ -753,34 +631,25 @@ void AP_ControlAltitude()
 	bool override_fdPitch = (XPLMGetDatai(XPLMFindDataRef("sim/operation/override/override_flightdir_ptch")) == 1);
 	bool autopilot_prendido = (XPLMGetDatai(XPLMFindDataRef("sim/cockpit/autopilot/autopilot_mode")) == 2);
 	float current_altitude = XPLMGetDataf(XPLMFindDataRef("sim/cockpit2/gauges/indicators/altitude_ft_pilot"));
-	//XPLMSetDataf(XPLMFindDataRef("CUSTOM/Flight/VertSpeed"),  time - time0);
-
-
+	
 	if ((time - time0 > 0) && (current_altitude - g_prevAlt != 0))
 	{
 		g_vertSpeed = (current_altitude - g_prevAlt) / (1.0*(time - time0));
 		XPLMSetDataf(XPLMFindDataRef("CUSTOM/Flight/VertSpeed"), 60*g_vertSpeed);
 	}
-
-	
+		
 	if (autopilot_prendido && override_fdPitch)
 	{
 		float ap_altitude = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/altitude"));
-		//float current_altitude = XPLMGetDataf(XPLMFindDataRef("sim/cockpit2/gauges/indicators/altitude_ft_pilot"));
-
-		float pitch = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/flight_director_pitch"));
-
-		//float alt_diff = ap_altitude - (current_altitude + g_vertSpeed*10);
+		float pitch = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/flight_director_pitch"));		
 		float alt_diff = ap_altitude - current_altitude;
 
 		//Control de pitch de momento, básico
 		if ((alt_diff < -100) && (alt_diff > -500)) pitch = -2.5;
 		else if (alt_diff > 100 && (alt_diff < 500)) pitch = 8.5;
-		//else if (alt_diff > 500) pitch = (alt_diff - 50) / 150 + 2;
-		//else if (alt_diff < -500) pitch = -((alt_diff - 50) / 150 + 2);
+		
 		else if ((alt_diff > -100) && (alt_diff < 100))
-		{
-			//gCtrlAltitude.setPropGain(0.1); // CUSTOM/AP/Vertical/Altitude/kPIDAlt
+		{			
 			//Valores óptimos: King Air -> 0.0001 (con los gases bien regulados, si no, a máximo gas, oscila). En descenso oscila que es un canteo horroroso. Lo siguiente será implementar control de pitch-velocidad
 			g_kPIDAlt = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt"));
 			gCtrlAltitude.setPropGain(0.00002/*g_kPIDAlt*/); //0.00002
@@ -789,12 +658,9 @@ void AP_ControlAltitude()
 			{
 				pitch += gCtrlAltitude.getOutput(ap_altitude - (current_altitude + g_vertSpeed * 1), time - time0);
 			}
-
-
+			
 			if (pitch > 8.5) pitch = 8.5;
-			else if (pitch < -2.5) pitch = -2.5;					
-
-			//XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/flight_director_pitch"), pitch);
+			else if (pitch < -2.5) pitch = -2.5;			
 		}				
 		
 
@@ -833,26 +699,14 @@ void AP_ControlVerticalSpeed(void)
 			if (ap_VS >= currVS)
 			{
 				if (ap_VS - currVS > 300)
-				{
-					//XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 1);
+				{				
 					pitch += 0.02;
 				}
-				/*
-				else if (ap_VS - currVS > 100)
-				{
-					XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 2);
-					pitch += 0.001;
-				}
-				*/
 				else
 				{
-					//XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 3);
-					//gCtrlVerticalSpeed.setPropGain(g_kPIDAlt); //Con la Baron, 0.00001
-					//gCtrlVerticalSpeed.setDerGain(g_dPIDAlt);
 					gCtrlVerticalSpeed.setDerGain(0.000002); //Beechcraft Baron
 					gCtrlVerticalSpeed.setPropGain(0.000025);
-
-					//float vs_= (currVS - g_prevVS) / (time - time0);
+									
 					if (time - time0 > 0)
 					{
 						pitch += gCtrlVerticalSpeed.getOutput(ap_VS - currVS, time - time0);
@@ -864,26 +718,14 @@ void AP_ControlVerticalSpeed(void)
 			else
 			{
 				if (currVS - ap_VS > 300)
-				{
-					//XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 4);
+				{				
 					pitch -= 0.02;
-				}
-				/*
-				else if (currVS - ap_VS > 100)
-				{
-					XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 5);
-					pitch -= 0.001;
-				}
-				*/
+				}				
 				else
-				{
-					//XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 6);
-					//gCtrlVerticalSpeed.setPropGain(g_kPIDAlt); //Con la Baron, 0.00001
-					//gCtrlVerticalSpeed.setDerGain(g_dPIDAlt);
+				{					
 					gCtrlVerticalSpeed.setDerGain(0.000002);
 					gCtrlVerticalSpeed.setPropGain(0.000025);
-					//gCtrlVerticalSpeed.setDerGain(g_dPIDAlt);
-					//float vs_trend = (currVS - g_prevVS) / (time - time0);
+					
 					if (time - time0 > 0)
 					{
 						pitch += gCtrlVerticalSpeed.getOutput(ap_VS - currVS, time - time0);
@@ -910,11 +752,7 @@ void AP_ControlSpeedPitch(void)
 	float current_altitude = XPLMGetDataf(XPLMFindDataRef("sim/cockpit2/gauges/indicators/altitude_ft_pilot"));
 	float ap_altitude = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/altitude"));
 	float pitch = XPLMGetDataf(XPLMFindDataRef("sim/cockpit/autopilot/flight_director_pitch"));
-	
-	//float speed_trend = 0;//(current_speed - g_prevSpeed) / (time - time0);
-	//if (time - time0 > 0) g_prevSpeedTrend = 10*((current_speed - g_prevSpeed) / (time - time0));
 
-	//float ap_VS = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"));
 
 	if (autopilot_prendido && override_fdPitch)
 	{
@@ -922,10 +760,6 @@ void AP_ControlSpeedPitch(void)
 		g_dPIDAlt = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/dPIDAlt")); //0.01
 		float current_vs = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/VerticalSpeed"));
 
-		//float spd_error = ap_airspeed - (current_speed + g_prevSpeedTrend); //Si es positivo, bajar morro, si es negativo, subir morro
-		//g_speedError = ap_airspeed - (current_speed + g_prevSpeedTrend);
-		//gCtrlSpeedPitch.setPropGain(g_kPIDAlt);
-		//gCtrlSpeedPitch.setDerGain(g_dPIDAlt);
 		gCtrlSpeedPitch.setPropGain(0.1);
 		gCtrlSpeedPitch.setDerGain(0.01);
 
@@ -936,8 +770,7 @@ void AP_ControlSpeedPitch(void)
 		{	
 			
 			if (time - time0 > 0)
-			{
-				//vs_act = current_vs - gCtrlSpeedPitch.getOutput(spd_error, time - time0);
+			{				
 				vs_act = current_vs - gCtrlSpeedPitch.getOutput(g_speedError, time - time0);
 				
 				if (vs_act > 3000) vs_act = 3000;
@@ -947,8 +780,7 @@ void AP_ControlSpeedPitch(void)
 		else if (ap_altitude - current_altitude < -500) //Descenso
 		{		
 			if (time - time0 > 0)
-			{
-				//vs_act = current_vs - gCtrlSpeedPitch.getOutput(spd_error, time - time0);
+			{				
 				vs_act = current_vs - gCtrlSpeedPitch.getOutput(g_speedError, time - time0);
 				
 				if (vs_act > -200) vs_act = -200;
@@ -989,57 +821,27 @@ void AP_ControlGlideSlope(void)
 		{
 			vs_act = 0;
 
-			//Chequeamos la needle (debe ser negativa para interceptación por debajo)
-			//if ((nav_vdef_dot > -0.4) && (nav_vdef_dot < -0.1))
+			//Chequeamos la needle (debe ser negativa para interceptación por debajo)			
 			if ((nav_vdef_dot > -40) && (nav_vdef_dot < -20))
 			{
 				vs_act = -300;
 			}			
 			else if (nav_vdef_dot >= -20)
 			{
-				vs_act = -500;
-				//XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 13);
+				vs_act = -500;				
 				XPLMSetDatai(XPLMFindDataRef("CUSTOM/AP/Vertical/Modo"), 14);
 			}			
 		}
-		else if (ap_modo_vertical == 14) //Variar la V/S entre -500 y -800 fpm
+		else if (ap_modo_vertical == 14) //Variar la V/S entre -400 y -1000 fpm
 		{
 
 			float der_gain = 0.08;//XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/dPIDAlt"));
 			float prop_gain = 0.005; //XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt"));
 
-			//prop_gain = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt")); //0.1
-			//der_gain = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/dPIDAlt"));
-
-			/*
-			if (rad_alt < 250)
-			{
-				der_gain = 0.008;
-				prop_gain = 0.0005;
-			}*/
-
 			//Cuando estemos cerca, modificamos esto para que no oscile tanto (el estrechamiento del cono del ILS hace que varíe más sensiblemente el valor de la aguja de G/S)
 			if (ils_has_dme && (fabs(ils_dme_dist) < 5))
 			{
-				//der_gain = 8;
-				//prop_gain = 0.5;
-				/*
-				if (nav_vdef_dot > -0.1)
-				{
-					vs_act -= 10;
-				}
-				else if (nav_vdef_dot < -0.2)
-				{
-					vs_act += 10;
-				}
-				else //Aplicamos esta recta: -0.1 -> -600 fpm / -0.2 -> -800 fpm
-				{
-					vs_act = 2000 * (nav_vdef_dot + 0.1) - 600;
-				}
 
-				if (vs_act > -600) vs_act = -600;
-				else if (vs_act < -800) vs_act = -800;
-				*/
 			}
 
 			gCtrlGlideSlope.setPropGain(prop_gain);
