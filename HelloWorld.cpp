@@ -352,15 +352,19 @@ void MyDrawWindowCallback(
 		float athr_output = 0;
 		float current_engn_thro = XPLMGetDataf(XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_override"));
 
-		gCtrlATHR.setPropGain(0.01);
+		float prop_gain_athr = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt"));
+		float der_gain_athr = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/dPIDAlt"));
+
+		gCtrlATHR.setPropGain(0.0001/*prop_gain_athr*/);
+		gCtrlATHR.setPropGain(der_gain_athr);
 
 
-		if (time - time0 > 0) athr_output = current_engn_thro + gCtrlATHR.getOutput(g_speedError, time - time0);
+		if (time - time0 > 0) current_engn_thro += gCtrlATHR.getOutput(g_speedError, time - time0);
 
-		if (athr_output < 0) athr_output = 0;
-		else if (athr_output > 1) athr_output = 1;
+		if (current_engn_thro < 0) current_engn_thro = 0;
+		else if (current_engn_thro > 1) current_engn_thro = 1;
 
-		XPLMSetDataf(XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_override"), athr_output);
+		XPLMSetDataf(XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_override"), current_engn_thro);
 	}
 	else
 	{
