@@ -116,6 +116,8 @@ static void AP_ControlSpeedPitch(void); //Control de velocidad manejando el pitc
 static void AP_ControlVerticalSpeed(void); //Control de velocidad vertical manejando el pitch
 static void AP_ControlGlideSlope(void); //Control de la pendiente de descenso en aproximación final
 
+static void ATHR_Control(void);
+
 static void AP_ControlRadialVOR(void); //Función alternativa para un VOR
 
 /*
@@ -345,6 +347,8 @@ void MyDrawWindowCallback(
 	}
 
 	//Control de velocidad con el A/THR
+	ATHR_Control();
+	/*
 	bool athrPrendido = (XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/ATHR/ATHR_Activo")) == 1);
 	if (athrPrendido)
 	{
@@ -355,8 +359,8 @@ void MyDrawWindowCallback(
 		float prop_gain_athr = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt"));
 		float der_gain_athr = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/dPIDAlt"));
 
-		gCtrlATHR.setPropGain(0.0001/*prop_gain_athr*/);
-		gCtrlATHR.setPropGain(der_gain_athr);
+		gCtrlATHR.setPropGain(0.0001);
+		gCtrlATHR.setPropGain(0.00001);
 
 
 		if (time - time0 > 0) current_engn_thro += gCtrlATHR.getOutput(g_speedError, time - time0);
@@ -370,6 +374,7 @@ void MyDrawWindowCallback(
 	{
 		XPLMSetDatai(XPLMFindDataRef("sim/operation/override/override_throttles"), 0);
 	}
+	*/
 
 	g_prevSpeed = current_speed;
 
@@ -522,6 +527,35 @@ int MyHandleMouseWheelCallback(
 	XPLMSetDataf(XPLMFindDataRef("sim/cockpit/autopilot/heading"), ap_heading);
 
 	return 1;
+}
+
+void ATHR_Control()
+{
+	bool athrPrendido = (XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/ATHR/ATHR_Activo")) == 1);
+	if (athrPrendido)
+	{
+		XPLMSetDatai(XPLMFindDataRef("sim/operation/override/override_throttles"), 1);
+		float athr_output = 0;
+		float current_engn_thro = XPLMGetDataf(XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_override"));
+
+		float prop_gain_athr = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/kPIDAlt"));
+		float der_gain_athr = XPLMGetDataf(XPLMFindDataRef("CUSTOM/AP/Vertical/Altitude/dPIDAlt"));
+
+		gCtrlATHR.setPropGain(0.0001);
+		gCtrlATHR.setDerGain(0.00001);
+
+
+		if (time - time0 > 0) current_engn_thro += gCtrlATHR.getOutput(g_speedError, time - time0);
+
+		if (current_engn_thro < 0) current_engn_thro = 0;
+		else if (current_engn_thro > 1) current_engn_thro = 1;
+
+		XPLMSetDataf(XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_override"), current_engn_thro);
+	}
+	else
+	{
+		XPLMSetDatai(XPLMFindDataRef("sim/operation/override/override_throttles"), 0);
+	}
 }
 
 void AP_ControlHeading()
