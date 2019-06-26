@@ -71,6 +71,7 @@ static PID gCtrlSpeedPitch(0.1, 0, 0);
 static PID gCtrlVerticalSpeed(0.1, 0, 0);
 static PID gCtrlGlideSlope(0.1, 0, 0);
 static PID gCtrlVOR_LOC(0.1, 0, 0);
+static PID gCtrlATHR(0.01, 0, 0);
 
 //static SerialUtil* serialUtil = NULL;
 static Serial* serial = NULL;
@@ -341,6 +342,29 @@ void MyDrawWindowCallback(
 		else if ((ap_modo_vertical == 3) || (ap_modo_vertical == 13) || (ap_modo_vertical == 14)) AP_ControlGlideSlope();
 
 		if (ap_modo_vertical != 13) AP_ControlVerticalSpeed();
+	}
+
+	//Control de velocidad con el A/THR
+	bool athrPrendido = (XPLMGetDatai(XPLMFindDataRef("CUSTOM/AP/ATHR/ATHR_Activo")) == 1);
+	if (athrPrendido)
+	{
+		XPLMSetDatai(XPLMFindDataRef("sim/operation/override/override_throttles"), 1);
+		float athr_output = 0;
+		float current_engn_thro = XPLMGetDataf(XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_override"));
+
+		gCtrlATHR.setPropGain(0.01);
+
+
+		if (time - time0 > 0) athr_output = current_engn_thro + gCtrlATHR.getOutput(g_speedError, time - time0);
+
+		if (athr_output < 0) athr_output = 0;
+		else if (athr_output > 1) athr_output = 1;
+
+		XPLMSetDataf(XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_override"), athr_output);
+	}
+	else
+	{
+		XPLMSetDatai(XPLMFindDataRef("sim/operation/override/override_throttles"), 0);
 	}
 
 	g_prevSpeed = current_speed;

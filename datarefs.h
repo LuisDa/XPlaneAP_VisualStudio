@@ -18,6 +18,8 @@ XPLMDataRef gDataRef_VORLOC_armado = NULL; //VOR LOC Armado (1) o no (0)
 XPLMDataRef gDataRef_ILSLOC_armado = NULL; //ILS LOC Armado (1) o no (0)
 XPLMDataRef gDataRef_ILSGS_armado = NULL; //ILS G/S Armado (1) o no (0)
 
+XPLMDataRef gDataRef_ATHR_activo = NULL; //A/THR activo (1) o no (0)
+
 //Variables asociadas a DataRefs
 static int g_apPrendido = 0;
 static int g_apLateralMode = 0;
@@ -31,6 +33,7 @@ static int g_estadoLOC = 0;
 static int g_vorLoc_armado = 0;
 static int g_ilsLoc_armado = 0;
 static int g_ilsGS_armado = 0;
+static int g_athr_activo = 0;
 
 float RegAPPrendidoDataRefInDRE(float elapsedMe, float elapsedSim, int counter, void * refcon);  //  Declare callback to register dataref
 int GetAPPrendidoDataRefCB(void* inRefcon);
@@ -84,6 +87,11 @@ void SetILSLOC_Armado(void* inRefcon, int inValue);
 float RegILSGS_Armado(float elapsedMe, float elapsedSim, int counter, void * refcon);
 int GetILSGS_Armado(void* inRefcon);
 void SetILSGS_Armado(void* inRefcon, int inValue);
+
+//A/THR activo
+float RegAthrActivo(float elapsedMe, float elapsedSim, int counter, void * refcon);
+int GetAthrActivo(void* inRefcon);
+void SetAthrActivo(void* inRefcon, int inValue);
 
 void setupDataRefs()
 {
@@ -269,6 +277,22 @@ void setupDataRefs()
 
 	gDataRef_ILSGS_armado = XPLMFindDataRef("CUSTOM/AP/Vertical/ILS_GS_Armado");
 	XPLMRegisterFlightLoopCallback(RegILSGS_Armado, 1, NULL);   // This FLCB will register our custom dataref in DRE
+
+	//A/THR activo
+	gDataRef_ATHR_activo = XPLMRegisterDataAccessor("CUSTOM/AP/ATHR/ATHR_Activo",
+		xplmType_Int,                                  // The types we support
+		1,                                             // Writable
+		GetAthrActivo, SetAthrActivo,      // Integer accessors
+		NULL, NULL,            // Float accessors
+		NULL, NULL,                                    // Doubles accessors
+		NULL, NULL,                                    // Int array accessors
+		NULL, NULL,                                    // Float array accessors
+		NULL, NULL,                                    // Raw data accessors
+		NULL, NULL);                                   // Refcons not used
+
+	gDataRef_ATHR_activo = XPLMFindDataRef("CUSTOM/AP/ATHR/ATHR_Activo");
+	XPLMRegisterFlightLoopCallback(RegAthrActivo, 1, NULL);   // This FLCB will register our custom dataref in DRE
+
 }
 
 
@@ -561,3 +585,26 @@ void SetILSGS_Armado(void* inRefcon, int inValue)
 	g_ilsGS_armado = inValue;
 }
 // / ILS G/S ARMADO
+
+// ATHR ACTIVO
+float RegAthrActivo(float elapsedMe, float elapsedSim, int counter, void * refcon)
+{
+	XPLMPluginID PluginID = XPLMFindPluginBySignature("xplanesdk.examples.DataRefEditor");
+	if (PluginID != XPLM_NO_PLUGIN_ID)
+	{
+		XPLMSendMessageToPlugin(PluginID, MSG_ADD_DATAREF, (void*)"CUSTOM/AP/ATHR/ATHR_Activo");
+	}
+
+	return 0;  // Flight loop is called only once!
+}
+
+int GetAthrActivo(void* inRefcon)
+{
+	return g_athr_activo;
+}
+
+void SetAthrActivo(void* inRefcon, int inValue)
+{
+	g_athr_activo = inValue;
+}
+// / ATHR ACTIVO
